@@ -111,6 +111,20 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
 .lb-ep-del{background:rgba(190,55,40,.8);color:#fff;padding:7px 13px;font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-family:'Noto Sans TC',sans-serif;border:none;cursor:pointer;transition:.15s;}
 .lb-ep-del:hover{background:#c0392b;}
 .lb-paste-hint{width:100%;margin-top:7px;font-size:.66rem;color:rgba(255,255,255,.2);letter-spacing:.1em;}
+#lb-desc{font-size:.78rem;color:rgba(255,255,255,.48);margin-top:7px;line-height:1.75;max-width:580px;white-space:pre-wrap;}
+.lb-ep-desc-wrap{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06);}
+.lb-ep-desc-ta{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f2ede4;padding:8px 11px;font-size:.82rem;font-family:'Noto Sans TC',sans-serif;outline:none;resize:vertical;min-height:68px;transition:border-color .2s;display:block;margin-bottom:7px;}
+.lb-ep-desc-ta:focus{border-color:rgba(181,146,90,.5);}
+.lb-ep-desc-ta::placeholder{color:rgba(255,255,255,.2);}
+.lb-batch-toggle{background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);padding:7px 13px;font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-family:'Noto Sans TC',sans-serif;border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:.15s;}
+.lb-batch-toggle.on{background:rgba(181,146,90,.18);color:#b5925a;border-color:rgba(181,146,90,.4);}
+.lb-batch-del-btn{background:rgba(190,55,40,.85);color:#fff;padding:7px 13px;font-size:.67rem;letter-spacing:.1em;font-family:'Noto Sans TC',sans-serif;border:none;cursor:pointer;display:none;align-items:center;gap:5px;}
+.lb-batch-del-btn.show{display:inline-flex;}
+.lb-thumb-wrap.lb-selected .lb-thumb{border-color:#e74c3c !important;opacity:1;}
+.lb-thumb-cb{position:absolute;top:3px;left:3px;width:16px;height:16px;accent-color:#e74c3c;cursor:pointer;z-index:11;display:none;}
+#lb-thumbs.batch-mode .lb-thumb-cb{display:block;}
+#lb-thumbs.batch-mode .lb-thumb-del{display:none !important;}
+#lb-thumbs.batch-mode .lb-thumb-wrap{cursor:pointer !important;}
 
 /* SEC EDIT BTN */
 .sec-edit-btn{display:none;position:absolute;bottom:14px;left:14px;z-index:10;background:rgba(181,146,90,.92);color:#fff;padding:7px 16px;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-family:'Noto Sans TC',sans-serif;gap:6px;align-items:center;cursor:pointer;border:none;transition:.15s;}
@@ -472,11 +486,16 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
       <button class="lb-arrow" id="lb-next" onclick="lbNav(1)">&#8250;</button>
     </div>
     <div id="lb-info">
-      <div><div id="lb-tag"></div><div id="lb-name"></div><div id="lb-area"></div></div>
+      <div style="flex:1;min-width:0;"><div id="lb-tag"></div><div id="lb-name"></div><div id="lb-area"></div><div id="lb-desc"></div></div>
       <div id="lb-counter"></div>
     </div>
     <div id="lb-thumbs"></div>
     <div id="lb-edit-panel">
+      <div class="lb-ep-desc-wrap">
+        <div class="lb-ep-title">✍ 案例說明</div>
+        <textarea class="lb-ep-desc-ta" id="lb-desc-ta" placeholder="輸入施工重點、材料說明、地點描述等，按儲存後顯示在燈箱內…"></textarea>
+        <button class="lb-ep-add" style="font-size:.67rem;" onclick="lbSaveDesc()">儲存說明</button>
+      </div>
       <div class="lb-ep-title">📎 新增照片到此案例</div>
       <div class="lb-ep-row">
         <label class="lb-ep-upload" for="lb-file-input">📁 選擇圖片</label>
@@ -484,6 +503,8 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
         <input class="lb-ep-url" id="lb-url-input" placeholder="貼上圖片網址後按新增…" onkeydown="if(event.key==='Enter')lbAddUrl()">
         <button class="lb-ep-add" onclick="lbAddUrl()">新增</button>
         <button class="lb-ep-del" onclick="lbDelCurrent()">🗑 刪除此張</button>
+        <button class="lb-batch-toggle" id="lb-batch-toggle" onclick="lbToggleBatch()">☑ 批次選取</button>
+        <button class="lb-batch-del-btn" id="lb-batch-del-btn" onclick="lbDelBatch()">🗑 刪除選取（<span id="lb-sel-count">0</span>）</button>
       </div>
       <div class="lb-paste-hint">💡 也可以直接 Ctrl + V 貼上截圖或複製的圖片</div>
     </div>
@@ -606,6 +627,7 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
       <select class="msl" id="c-tag"><option>住宅景觀</option><option>商業外牆</option><option>庭院地坪</option><option>室內裝飾</option><option>其他工程</option></select>
     </div>
     <div class="mf"><label class="ml">地區</label><input class="mi" id="c-area" placeholder="例：台北市大安區"></div>
+    <div class="mf"><label class="ml">案例說明</label><textarea class="mi" id="c-desc" placeholder="施工重點、材料、工法說明等（可選填）" style="height:72px;resize:vertical;"></textarea></div>
     <div class="mf">
       <label class="ml">封面照片（第一張）</label>
       <label class="upload-lbl" for="c-file">📁 選擇照片</label>
@@ -1042,7 +1064,7 @@ var DEF_DATA={
 };
 
 var D=null,editMode=false,editingId=null,pendImgs={},curFilter='all';
-var lbId=null,lbIdx=0,lbDragIdx=0;
+var lbId=null,lbIdx=0,lbDragIdx=0,lbBatchMode=false;
 
 function loadData(){var r=localStorage.getItem(LS);D=r?JSON.parse(r):JSON.parse(JSON.stringify(DEF_DATA));}
 function saveData(){localStorage.setItem(LS,JSON.stringify(D));}
@@ -1152,14 +1174,14 @@ function openEditMod(id,e){
   var c=D.cases.find(function(x){return x.id===id;});if(!c)return;
   document.getElementById('case-modal-h').textContent='編輯案例';
   set('c-name',c.name);document.getElementById('c-tag').value=c.tag;
-  set('c-area',c.area);set('c-url',c.img||'');
+  set('c-area',c.area);set('c-desc',c.desc||'');set('c-url',c.img||'');
   if(c.img){showPrev('c-prev',c.img);pendImgs.caseImg=c.img;}else clrPrev('c-prev');
   document.getElementById('case-modal').classList.add('on');
 }
 function saveCase(){
   var name=get('c-name').trim();if(!name){alert('請填寫案例名稱');return;}
   var img=pendImgs.caseImg||get('c-url').trim()||'';
-  var obj={tag:document.getElementById('c-tag').value,name:name,area:get('c-area').trim(),img:img};
+  var obj={tag:document.getElementById('c-tag').value,name:name,area:get('c-area').trim(),desc:get('c-desc').trim(),img:img};
   if(editingId){
     var i=D.cases.findIndex(function(c){return c.id===editingId;});
     if(i>-1){obj.imgs=D.cases[i].imgs||[];if(img&&(!obj.imgs.length||obj.imgs[0]!==img))obj.imgs.unshift(img);D.cases[i]=Object.assign({},D.cases[i],obj);}
@@ -1176,7 +1198,7 @@ function delCase(id,e){
 
 /* LIGHTBOX */
 function openLb(id){
-  lbId=id;lbIdx=0;
+  lbId=id;lbIdx=0;lbBatchMode=false;
   var c=D.cases.find(function(x){return x.id===id;});if(!c)return;
   if(!c.imgs)c.imgs=c.img?[c.img]:[];
   renderLb();
@@ -1195,6 +1217,10 @@ function renderLb(){
   document.getElementById('lb-tag').textContent=c.tag;
   document.getElementById('lb-name').textContent=c.name;
   document.getElementById('lb-area').textContent='📍 '+c.area;
+  document.getElementById('lb-desc').textContent=c.desc||'';
+  var descTa=document.getElementById('lb-desc-ta');if(descTa)descTa.value=c.desc||'';
+  var tb2=document.getElementById('lb-thumbs');
+  if(lbBatchMode){tb2.classList.add('batch-mode');}else{tb2.classList.remove('batch-mode');}
   document.getElementById('lb-counter').textContent=imgs.length?(lbIdx+1)+' / '+imgs.length:'';
   document.getElementById('lb-prev').style.display=imgs.length>1?'flex':'none';
   document.getElementById('lb-next').style.display=imgs.length>1?'flex':'none';
@@ -1206,8 +1232,14 @@ function renderLb(){
     var wrap=document.createElement('div');
     wrap.className='lb-thumb-wrap';
     wrap.dataset.idx=i;
-    // click to view
-    wrap.onclick=(function(idx){return function(){lbIdx=idx;renderLb();};})(i);
+    // click: batch mode = toggle select, normal = view
+    wrap.onclick=(function(w,idx){return function(e){
+      if(lbBatchMode){
+        w.classList.toggle('lb-selected');
+        var cb=w.querySelector('.lb-thumb-cb');if(cb)cb.checked=w.classList.contains('lb-selected');
+        lbUpdateBatchCount();
+      } else {lbIdx=idx;renderLb();}
+    };})(wrap,i);
     // drag & drop (edit mode only)
     if(editMode){
       wrap.draggable=true;
@@ -1244,7 +1276,10 @@ function renderLb(){
     var del=document.createElement('button');
     del.className='lb-thumb-del';del.textContent='✕';del.title='刪除此張';
     del.onclick=(function(idx){return function(e){e.stopPropagation();lbDelAt(idx);};})(i);
-    wrap.appendChild(img);wrap.appendChild(del);tb.appendChild(wrap);
+    var cb=document.createElement('input');
+    cb.type='checkbox';cb.className='lb-thumb-cb';
+    cb.onclick=(function(w,ck){return function(e){e.stopPropagation();w.classList.toggle('lb-selected',ck.checked);lbUpdateBatchCount();};})(wrap,cb);
+    wrap.appendChild(img);wrap.appendChild(del);wrap.appendChild(cb);tb.appendChild(wrap);
   });
   // hint text in edit mode
   if(editMode&&imgs.length>1){
@@ -1277,6 +1312,41 @@ function lbUploadFiles(input){
     var r=new FileReader();r.onload=function(e){lbAddImg(e.target.result);};r.readAsDataURL(f);
   });
   input.value='';
+}
+function lbSaveDesc(){
+  var c=D.cases.find(function(x){return x.id===lbId;});if(!c)return;
+  var ta=document.getElementById('lb-desc-ta');
+  c.desc=(ta?ta.value:'').trim();
+  saveData();
+  document.getElementById('lb-desc').textContent=c.desc;
+}
+function lbToggleBatch(){
+  lbBatchMode=!lbBatchMode;
+  var btn=document.getElementById('lb-batch-toggle');
+  var delBtn=document.getElementById('lb-batch-del-btn');
+  if(btn)btn.classList.toggle('on',lbBatchMode);
+  if(!lbBatchMode&&delBtn){delBtn.classList.remove('show');}
+  renderLb();
+  lbUpdateBatchCount();
+}
+function lbUpdateBatchCount(){
+  var n=document.querySelectorAll('#lb-thumbs .lb-thumb-wrap.lb-selected').length;
+  var el=document.getElementById('lb-sel-count');if(el)el.textContent=n;
+  var delBtn=document.getElementById('lb-batch-del-btn');
+  if(delBtn){if(n>0)delBtn.classList.add('show');else delBtn.classList.remove('show');}
+}
+function lbDelBatch(){
+  var c=D.cases.find(function(x){return x.id===lbId;});if(!c)return;
+  var wraps=document.querySelectorAll('#lb-thumbs .lb-thumb-wrap.lb-selected');
+  if(!wraps.length){alert('請先勾選要刪除的照片');return;}
+  if(!confirm('確定刪除選取的 '+wraps.length+' 張照片？'))return;
+  var idxToDelete=[];
+  wraps.forEach(function(w){idxToDelete.push(parseInt(w.dataset.idx));});
+  idxToDelete.sort(function(a,b){return b-a;});
+  idxToDelete.forEach(function(idx){c.imgs.splice(idx,1);});
+  c.img=c.imgs[0]||'';
+  lbIdx=0;lbBatchMode=false;
+  saveData();renderLb();renderCases();
 }
 function lbDelCurrent(){lbDelAt(lbIdx);}
 function lbDelAt(idx){
