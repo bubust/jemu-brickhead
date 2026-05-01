@@ -492,6 +492,23 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
     <div id="lb-thumbs"></div>
     <div id="lb-edit-panel">
       <div class="lb-ep-desc-wrap">
+        <div class="lb-ep-title">🖼 案例封面照</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:7px;">
+          <img id="lb-cover-prev" style="width:72px;height:54px;object-fit:cover;background:#111;flex-shrink:0;display:none;">
+          <div id="lb-cover-empty" style="width:72px;height:54px;background:#111;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.62rem;color:rgba(255,255,255,.25);letter-spacing:.08em;">無封面</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div class="lb-ep-row">
+              <button class="lb-ep-add" onclick="lbSetCoverCurrent()" style="font-size:.67rem;">⭐ 用目前這張設為封面</button>
+              <label class="lb-ep-upload" for="lb-cover-file" style="font-size:.67rem;">📁 上傳封面</label>
+              <input type="file" id="lb-cover-file" accept="image/*" style="display:none" onchange="lbUploadCover(this)">
+            </div>
+            <div class="lb-ep-row">
+              <input class="lb-ep-url" id="lb-cover-url" placeholder="或貼上封面圖網址後按 Enter…" onkeydown="if(event.key==='Enter')lbSetCoverUrl()">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="lb-ep-desc-wrap">
         <div class="lb-ep-title">✍ 案例說明</div>
         <textarea class="lb-ep-desc-ta" id="lb-desc-ta" placeholder="輸入施工重點、材料說明、地點描述等，按儲存後顯示在燈箱內…"></textarea>
         <button class="lb-ep-add" style="font-size:.67rem;" onclick="lbSaveDesc()">儲存說明</button>
@@ -1152,8 +1169,8 @@ function renderCases(){
   var old=g.querySelectorAll('.card-wrap[data-tag]');
   old.forEach(function(w){w.remove();});
   D.cases.forEach(function(c){
-    if(!c.imgs)c.imgs=c.img?[c.img]:[];
-    var thumb=c.imgs[0]||c.img||'';
+    if(!c.imgs)c.imgs=[];
+    var thumb=c.img||c.imgs[0]||'';
     var w=document.createElement('div');
     w.className='card-wrap';w.dataset.tag=c.tag;
     var photoCount=c.imgs.length>1?' &nbsp;·&nbsp; '+c.imgs.length+'張照片':'';
@@ -1200,7 +1217,7 @@ function delCase(id,e){
 function openLb(id){
   lbId=id;lbIdx=0;lbBatchMode=false;
   var c=D.cases.find(function(x){return x.id===id;});if(!c)return;
-  if(!c.imgs)c.imgs=c.img?[c.img]:[];
+  if(!c.imgs)c.imgs=[];
   renderLb();
   document.getElementById('lb-overlay').classList.add('on');
   document.getElementById('lb-url-input').value='';
@@ -1287,6 +1304,39 @@ function renderLb(){
     hint.textContent='拖拉可調順序';
     tb.appendChild(hint);
   }
+  renderLbCoverPreview();
+}
+function renderLbCoverPreview(){
+  var c=D.cases.find(function(x){return x.id===lbId;});
+  var prev=document.getElementById('lb-cover-prev');
+  var empty=document.getElementById('lb-cover-empty');
+  if(!prev||!empty)return;
+  if(c&&c.img){prev.src=c.img;prev.style.display='block';empty.style.display='none';}
+  else{prev.style.display='none';empty.style.display='flex';}
+}
+function lbSetCoverCurrent(){
+  var c=D.cases.find(function(x){return x.id===lbId;});if(!c)return;
+  var imgs=c.imgs||[];
+  if(!imgs.length){alert('請先在燈箱內新增照片');return;}
+  c.img=imgs[lbIdx];
+  saveData();renderCases();renderLbCoverPreview();
+}
+function lbUploadCover(input){
+  var f=input.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var c=D.cases.find(function(x){return x.id===lbId;});if(!c)return;
+    c.img=e.target.result;
+    saveData();renderCases();renderLbCoverPreview();
+  };
+  r.readAsDataURL(f);input.value='';
+}
+function lbSetCoverUrl(){
+  var c=D.cases.find(function(x){return x.id===lbId;});if(!c)return;
+  var url=document.getElementById('lb-cover-url').value.trim();if(!url)return;
+  c.img=url;
+  saveData();renderCases();renderLbCoverPreview();
+  document.getElementById('lb-cover-url').value='';
 }
 function lbNav(dir){
   var c=D.cases.find(function(x){return x.id===lbId;});
