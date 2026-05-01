@@ -1184,9 +1184,9 @@ function saveCase(){
   var obj={tag:document.getElementById('c-tag').value,name:name,area:get('c-area').trim(),desc:get('c-desc').trim(),img:img};
   if(editingId){
     var i=D.cases.findIndex(function(c){return c.id===editingId;});
-    if(i>-1){obj.imgs=D.cases[i].imgs||[];if(img&&(!obj.imgs.length||obj.imgs[0]!==img))obj.imgs.unshift(img);D.cases[i]=Object.assign({},D.cases[i],obj);}
+    if(i>-1){obj.imgs=D.cases[i].imgs||[];D.cases[i]=Object.assign({},D.cases[i],obj);}
   } else {
-    obj.imgs=img?[img]:[];D.cases.push(Object.assign({id:'c'+Date.now()},obj));
+    obj.imgs=[];D.cases.push(Object.assign({id:'c'+Date.now()},obj));
   }
   saveData();renderCases();closeOv('case-modal');
 }
@@ -1265,7 +1265,6 @@ function renderLb(){
         if(!c)return;
         var moved=c.imgs.splice(fromIdx,1)[0];
         c.imgs.splice(toIdx,0,moved);
-        c.img=c.imgs[0]||'';
         lbIdx=toIdx;
         saveData();renderLb();renderCases();
       });
@@ -1344,7 +1343,6 @@ function lbDelBatch(){
   wraps.forEach(function(w){idxToDelete.push(parseInt(w.dataset.idx));});
   idxToDelete.sort(function(a,b){return b-a;});
   idxToDelete.forEach(function(idx){c.imgs.splice(idx,1);});
-  c.img=c.imgs[0]||'';
   lbIdx=0;lbBatchMode=false;
   saveData();renderLb();renderCases();
 }
@@ -1353,7 +1351,7 @@ function lbDelAt(idx){
   var c=D.cases.find(function(x){return x.id===lbId;});
   if(!c||!c.imgs||!c.imgs.length)return;
   if(!confirm('確定刪除這張照片？'))return;
-  c.imgs.splice(idx,1);c.img=c.imgs[0]||'';
+  c.imgs.splice(idx,1);
   lbIdx=Math.min(lbIdx,Math.max(0,c.imgs.length-1));
   saveData();renderLb();renderCases();
 }
