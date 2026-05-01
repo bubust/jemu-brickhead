@@ -1234,7 +1234,12 @@ function saveCase(){
   } else {
     obj.imgs=[];D.cases.push(Object.assign({id:'c'+Date.now()},obj));
   }
-  saveData();renderCases();closeOv('case-modal');
+  try{saveData();}catch(e){
+    if(editingId){var ri=D.cases.findIndex(function(c){return c.id===editingId;});if(ri>-1)D.cases[ri].img='';} else {D.cases.pop();}
+    alert('儲存失敗：儲存空間不足。請使用圖片網址取代上傳照片，或先刪除部分舊案例的照片。');
+    return;
+  }
+  renderCases();closeOv('case-modal');
 }
 function delCase(id,e){
   if(e)e.stopPropagation();
@@ -1546,7 +1551,21 @@ function exitEdit(){
 /* IMAGE HELPERS */
 function handleFile(input,prevId,key){
   var f=input.files[0];if(!f)return;
-  var r=new FileReader();r.onload=function(e){pendImgs[key]=e.target.result;showPrev(prevId,e.target.result);};r.readAsDataURL(f);
+  var r=new FileReader();
+  r.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var MAX=1200,q=0.75;
+      var w=img.naturalWidth,h=img.naturalHeight;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      var compressed=cv.toDataURL('image/jpeg',q);
+      pendImgs[key]=compressed;showPrev(prevId,compressed);
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(f);
 }
 function handleUrl(val,prevId,key){if(!val)return;pendImgs[key]=val;showPrev(prevId,val);}
 
