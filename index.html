@@ -1775,13 +1775,14 @@ function setText(id,val){var el=document.getElementById(id);if(el)el.textContent
 <!-- DEPLOY HELPER -->
 <div id="deploy-bar" style="display:none;position:fixed;bottom:80px;left:0;right:0;z-index:500;text-align:center;pointer-events:none;">
   <div style="display:inline-flex;align-items:center;gap:12px;background:#1a1714;border:1px solid rgba(181,146,90,.4);padding:12px 24px;pointer-events:all;box-shadow:0 4px 20px rgba(0,0,0,.4);">
-    <span style="font-size:.72rem;letter-spacing:.15em;color:rgba(242,237,228,.6);">下載後拖到 Netlify 即可更新</span>
-    <button onclick="downloadAsIndex()" style="background:#b5925a;color:#fff;border:none;padding:8px 20px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-      ⬇ 下載 index.html
+    <span style="font-size:.72rem;letter-spacing:.15em;color:rgba(242,237,228,.6);">資料管理</span>
+    <button onclick="exportData()" style="background:#b5925a;color:#fff;border:none;padding:8px 20px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+      📤 匯出備份
     </button>
-    <a href="https://app.netlify.com/teams/bubust/projects" target="_blank" style="background:#0e76a8;color:#fff;text-decoration:none;padding:8px 20px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;font-family:'Noto Sans TC',sans-serif;">
-      🌐 開啟 Netlify
-    </a>
+    <button onclick="document.getElementById('import-file').click()" style="background:#4a7c59;color:#fff;border:none;padding:8px 20px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+      📥 匯入資料
+    </button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importDataFile(this)">
   </div>
 </div>
 
@@ -1823,10 +1824,33 @@ function downloadAsIndex(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='index.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+}
+function exportData(){
+  var d={};
+  ['jemu_all_v3','jemu_style_v1','jemu_social_v1','jemu_tabs_v1','jemu_hero_v2'].forEach(function(k){
+    var v=localStorage.getItem(k);if(v)d[k]=v;
+  });
+  var blob=new Blob([JSON.stringify(d)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='jemu-backup.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+  alert('備份已下載：jemu-backup.json');
+}
+function importDataFile(input){
+  var f=input.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    try{
+      var d=JSON.parse(e.target.result);
+      var count=0;
+      Object.keys(d).forEach(function(k){localStorage.setItem(k,d[k]);count++;});
+      alert('成功匯入 '+count+' 筆資料！即將重新整理…');
+      location.reload();
+    }catch(err){alert('檔案格式錯誤，請選擇正確的 jemu-backup.json');}
+  };
+  r.readAsText(f);input.value='';
 }
 </script>
 </body>
