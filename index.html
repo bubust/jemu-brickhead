@@ -1196,8 +1196,10 @@ function openAddMod(){
   editingId=null;pendImgs.caseImg='';
   document.getElementById('case-modal-h').textContent='新增案例';
   set('c-name','');document.getElementById('c-tag').value='住宅景觀';
-  set('c-area','');set('c-url','');clrPrev('c-prev');
+  set('c-area','');set('c-desc','');set('c-url','');clrPrev('c-prev');
+  var el=document.getElementById('c-name');el.style.borderColor='';
   document.getElementById('case-modal').classList.add('on');
+  setTimeout(function(){var m=document.querySelector('#case-modal .modal');if(m)m.scrollTop=0;el.focus();},50);
 }
 function openEditMod(id,e){
   if(e)e.stopPropagation();editingId=id;pendImgs.caseImg='';
@@ -1206,10 +1208,20 @@ function openEditMod(id,e){
   set('c-name',c.name);document.getElementById('c-tag').value=c.tag;
   set('c-area',c.area);set('c-desc',c.desc||'');set('c-url',c.img||'');
   if(c.img){showPrev('c-prev',c.img);pendImgs.caseImg=c.img;}else clrPrev('c-prev');
+  document.getElementById('c-name').style.borderColor='';
   document.getElementById('case-modal').classList.add('on');
+  setTimeout(function(){var m=document.querySelector('#case-modal .modal');if(m)m.scrollTop=0;},50);
 }
 function saveCase(){
-  var name=get('c-name').trim();if(!name){alert('請填寫案例名稱');return;}
+  var name=get('c-name').trim();
+  if(!name){
+    var el=document.getElementById('c-name');
+    el.style.borderColor='#c0392b';
+    var m=document.querySelector('#case-modal .modal');if(m)m.scrollTop=0;
+    el.focus();
+    return;
+  }
+  document.getElementById('c-name').style.borderColor='';
   var img=pendImgs.caseImg||get('c-url').trim()||'';
   var obj={tag:document.getElementById('c-tag').value,name:name,area:get('c-area').trim(),desc:get('c-desc').trim(),img:img};
   if(editingId){
