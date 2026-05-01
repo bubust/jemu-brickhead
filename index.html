@@ -74,18 +74,21 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
 .lb-arrow:hover{background:rgba(181,146,90,.7);}
 #lb-prev{left:12px;}#lb-next{right:12px;}
 #lb-right{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#1a1714;}
-#lb-info{padding:18px 20px 12px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
-#lb-tag{font-size:.62rem;letter-spacing:.3em;color:#b5925a;text-transform:uppercase;margin-bottom:4px;}
-#lb-name{font-family:'Noto Serif TC',serif;font-size:1.1rem;color:#f2ede4;letter-spacing:.08em;}
+#lb-info{padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+#lb-info-top{display:flex;align-items:flex-start;justify-content:space-between;}
+#lb-tag{font-size:.6rem;letter-spacing:.3em;color:#b5925a;text-transform:uppercase;margin-bottom:5px;}
+#lb-name{font-family:'Noto Serif TC',serif;font-size:1.15rem;color:#f2ede4;letter-spacing:.08em;}
 #lb-area{font-size:.72rem;color:rgba(255,255,255,.35);margin-top:3px;}
-#lb-counter{font-family:'Cormorant Garamond',serif;font-size:.9rem;color:rgba(255,255,255,.28);flex-shrink:0;padding-top:2px;}
-#lb-thumbs{display:flex;gap:4px;padding:10px 12px;overflow-x:auto;flex-shrink:0;background:#111;scrollbar-width:thin;}
-#lb-thumbs::-webkit-scrollbar{height:3px;}
+#lb-counter{font-family:'Cormorant Garamond',serif;font-size:.88rem;color:rgba(255,255,255,.28);flex-shrink:0;padding-top:2px;}
+#lb-desc{font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.8;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);white-space:pre-wrap;display:none;}
+#lb-desc.has-text{display:block;}
+#lb-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:10px 12px;overflow-y:auto;flex:1;background:#111;align-content:start;scrollbar-width:thin;}
+#lb-thumbs::-webkit-scrollbar{width:3px;}
 #lb-thumbs::-webkit-scrollbar-thumb{background:#b5925a;}
 @media(max-width:700px){#lb-box{flex-direction:column;height:auto;max-height:95vh;}#lb-left{flex:0 0 55vw;min-height:240px;}#lb-right{flex:1;overflow-y:auto;}}
-.lb-thumb{width:68px;height:50px;flex-shrink:0;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:.15s;opacity:.55;}
+.lb-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:.15s;opacity:.65;display:block;}
 .lb-thumb.active{border-color:#b5925a;opacity:1;}
-.lb-thumb-wrap{position:relative;flex-shrink:0;display:inline-block;transition:opacity .2s,transform .2s;}
+.lb-thumb-wrap{position:relative;display:block;transition:opacity .2s,transform .2s;}
 .lb-thumb-wrap.dragging{opacity:.35;transform:scale(.93);}
 .lb-thumb-wrap.drag-over{outline:2px solid #b5925a;outline-offset:2px;}
 .edit-mode .lb-thumb-wrap{cursor:grab;}
@@ -492,8 +495,11 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
     </div>
     <div id="lb-right">
     <div id="lb-info">
-      <div style="flex:1;min-width:0;"><div id="lb-tag"></div><div id="lb-name"></div><div id="lb-area"></div><div id="lb-desc"></div></div>
-      <div id="lb-counter"></div>
+      <div id="lb-info-top">
+        <div style="flex:1;min-width:0;"><div id="lb-tag"></div><div id="lb-name"></div><div id="lb-area"></div></div>
+        <div id="lb-counter"></div>
+      </div>
+      <div id="lb-desc"></div>
     </div>
     <div id="lb-thumbs"></div>
     <div id="lb-edit-panel">
@@ -1242,7 +1248,9 @@ function renderLb(){
   document.getElementById('lb-tag').textContent=c.tag;
   document.getElementById('lb-name').textContent=c.name;
   document.getElementById('lb-area').textContent='📍 '+c.area;
-  document.getElementById('lb-desc').textContent=c.desc||'';
+  var descEl=document.getElementById('lb-desc');
+  descEl.textContent=c.desc||'';
+  descEl.classList.toggle('has-text',!!(c.desc&&c.desc.trim()));
   var descTa=document.getElementById('lb-desc-ta');if(descTa)descTa.value=c.desc||'';
   var tb2=document.getElementById('lb-thumbs');
   if(lbBatchMode){tb2.classList.add('batch-mode');}else{tb2.classList.remove('batch-mode');}
@@ -1308,8 +1316,8 @@ function renderLb(){
   // hint text in edit mode
   if(editMode&&imgs.length>1){
     var hint=document.createElement('div');
-    hint.style.cssText='flex-shrink:0;display:flex;align-items:center;padding:0 8px;font-size:.62rem;color:rgba(255,255,255,.3);letter-spacing:.1em;white-space:nowrap;';
-    hint.textContent='拖拉可調順序';
+    hint.style.cssText='grid-column:1/-1;font-size:.62rem;color:rgba(255,255,255,.25);letter-spacing:.1em;padding:4px 2px;';
+    hint.textContent='✦ 編輯模式：拖拉可調順序';
     tb.appendChild(hint);
   }
   renderLbCoverPreview();
