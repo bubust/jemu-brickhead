@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://gregarious-entremet-15dd4d.netlify.app/sitemap.xml
+Sitemap: https://bubust.github.io/jemu-brickhead/sitemap.xml

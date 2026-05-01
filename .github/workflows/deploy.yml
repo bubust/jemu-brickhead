@@ -1,21 +1,12 @@
-name: Deploy to Netlify
+# GitHub Pages 直接從 main branch 自動部署，無需額外 workflow
+# 此檔案保留備用
+name: No-op
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Netlify
-        run: |
-          npx netlify-cli deploy \
-            --dir . \
-            --site ${{ secrets.NETLIFY_SITE_ID }} \
-            --auth ${{ secrets.NETLIFY_AUTH_TOKEN }} \
-            --prod \
-            --message "Auto deploy from GitHub Actions"
+      - run: echo "GitHub Pages auto-deploys from main branch"
