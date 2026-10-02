@@ -290,7 +290,7 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
 .f-copy{border-top:1px solid rgba(242,237,228,.05);padding-top:20px;font-size:.68rem;color:rgba(242,237,228,.18);letter-spacing:.08em;}
 
 /* SOCIAL */
-#social-float{position:fixed;bottom:110px;right:0;z-index:300;display:flex;flex-direction:column;}
+#social-float{position:fixed;bottom:70px;right:0;z-index:300;display:flex;flex-direction:column;}
 .sf{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;transition:width .22s ease;cursor:pointer;}
 .sf.ln{background:#06C755;}.sf.wa{background:#25D366;}.sf.fb{background:#1877F2;}
 
@@ -351,6 +351,22 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
 @media(max-width:960px){#portfolio-grid{grid-template-columns:repeat(2,1fr);}.about-grid{grid-template-columns:1fr;gap:44px;}.contact-grid{grid-template-columns:1fr;gap:44px;}#stats-bar{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:680px){#nav{display:none;}.mob-nav-bar{display:flex;}#portfolio-grid{grid-template-columns:repeat(1,1fr);}.cf-row{grid-template-columns:1fr;}.about-frame{display:none;}.m-row{grid-template-columns:1fr;}}
 @media(min-width:681px){.mob-nav-bar{display:none!important;}}
+/* MOBILE — tighter spacing, chip tabs, compact floating buttons */
+@media(max-width:680px){
+  section{padding:48px 5% 56px;}
+  .sec-head{margin-bottom:26px;}
+  .sec-en{font-size:.72rem;letter-spacing:.38em;}
+  .stat-cell{padding:22px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid rgba(255,255,255,.07);}
+  .stat-n{font-size:2rem;white-space:nowrap;}
+  .stat-l{font-size:.62rem;letter-spacing:.16em;}
+  .tab-row{gap:8px;margin-bottom:22px;}
+  .tab-btn{padding:6px 14px;font-size:.8rem;letter-spacing:.08em;border-color:rgba(26,23,20,.12);border-radius:999px;}
+  #social-float{bottom:calc(16px + 36px + env(safe-area-inset-bottom));}
+  #settings-btn{bottom:calc(16px + env(safe-area-inset-bottom));}
+  .sf,#settings-btn{width:36px;height:36px;}
+  .sf{font-size:.72rem;}
+  #settings-btn{font-size:.9rem;}
+}
 </style>
 </head>
 <body>
