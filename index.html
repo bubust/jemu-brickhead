@@ -1961,6 +1961,7 @@ function ghToken(){
 }
 function ghApi(path,opt){
   opt=opt||{};
+  opt.cache='no-store';  // 避免拿到快取的舊 sha 造成 409
   opt.headers={'Authorization':'Bearer '+ghToken(),'Accept':'application/vnd.github+json'};
   return fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+path,opt);
 }
@@ -2022,6 +2023,40 @@ function mergeKeys(local,online){
   });
   return out;
 }
+// 讀線上 site.json → 合併 → 寫回；sha 已過期（409，例如剛好別人也在發布）就重讀再試
+function putSite(localKeys,tries){
+  return ghApi('data/site.json?ref='+GH_BRANCH).then(function(r){
+    if(r.status===401){localStorage.removeItem(LS_GH_TOKEN);throw new Error('GitHub 金鑰無效，請重新按發布並貼上正確金鑰');}
+    if(!r.ok)return {};
+    return r.json().then(function(f){
+      try{f.site=JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\s/g,'')))));}catch(e){}
+      return f;
+    });
+  }).then(function(cur){
+    var keys=localKeys;
+    // 線上版在上次同步後被改過（例如 Claude 直接改的），把沒在這台電腦改過的部分保留下來
+    if(cur.site&&cur.site.keys&&(cur.site.updated||0)>(+localStorage.getItem(LS_PUB_TS)||0)){
+      keys=mergeKeys(localKeys,cur.site.keys);
+    }
+    var site={updated:Date.now(),keys:keys};
+    var body={message:'網站內容更新',content:b64utf8(JSON.stringify(site)),branch:GH_BRANCH};
+    if(cur.sha)body.sha=cur.sha;
+    return ghApi('data/site.json',{method:'PUT',body:JSON.stringify(body)}).then(function(r){
+      if((r.status===409||r.status===422)&&tries<3){
+        return new Promise(function(res){setTimeout(res,1500);}).then(function(){return putSite(localKeys,tries+1);});
+      }
+      if(!r.ok)throw new Error('發布失敗（'+r.status+'），請稍等一下再按一次發布');
+      // 本機也換成圖片路徑版本，順便釋放 localStorage 空間
+      Object.keys(keys).forEach(function(k){localStorage.setItem(k,keys[k]);});
+      localStorage.setItem(LS_PUB_TS,String(site.updated));
+      localStorage.setItem(LS_BASE,JSON.stringify(keys));
+      localStorage.removeItem(LS_DIRTY);
+      updatePubStatus();
+      alert('✅ 已發布！約 1～2 分鐘後，所有人打開網站都會看到新內容。');
+      if(merged){location.reload();}
+    });
+  });
+}
 function publishOnline(){merged=false;
   if(!ghToken())return;
   var btn=document.getElementById('pub-btn'),label=btn.textContent;
@@ -2034,34 +2069,7 @@ function publishOnline(){merged=false;
     .then(function(){
       Object.keys(parsed).forEach(function(k){keys[k]=JSON.stringify(parsed[k]);});
       btn.textContent='發布中…';
-      return ghApi('data/site.json?ref='+GH_BRANCH).then(function(r){
-        if(r.status===401){localStorage.removeItem(LS_GH_TOKEN);throw new Error('GitHub 金鑰無效，請重新按發布並貼上正確金鑰');}
-        if(!r.ok)return {};
-        return r.json().then(function(f){
-          try{f.site=JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\s/g,'')))));}catch(e){}
-          return f;
-        });
-      });
-    })
-    .then(function(cur){
-      // 線上版在上次同步後被改過（例如 Claude 直接改的），把沒在這台電腦改過的部分保留下來
-      if(cur.site&&cur.site.keys&&(cur.site.updated||0)>(+localStorage.getItem(LS_PUB_TS)||0)){
-        keys=mergeKeys(keys,cur.site.keys);
-      }
-      var site={updated:Date.now(),keys:keys};
-      var body={message:'網站內容更新',content:b64utf8(JSON.stringify(site)),branch:GH_BRANCH};
-      if(cur.sha)body.sha=cur.sha;
-      return ghApi('data/site.json',{method:'PUT',body:JSON.stringify(body)}).then(function(r){
-        if(!r.ok)throw new Error('發布失敗（'+r.status+'）');
-        // 本機也換成圖片路徑版本，順便釋放 localStorage 空間
-        Object.keys(keys).forEach(function(k){localStorage.setItem(k,keys[k]);});
-        localStorage.setItem(LS_PUB_TS,String(site.updated));
-        localStorage.setItem(LS_BASE,JSON.stringify(keys));
-        localStorage.removeItem(LS_DIRTY);
-        updatePubStatus();
-        alert('✅ 已發布！約 1～2 分鐘後，所有人打開網站都會看到新內容。');
-        if(merged){location.reload();}
-      });
+      return putSite(keys,0);
     })
     .catch(function(e){alert('❌ '+e.message);})
     .then(function(){btn.disabled=false;btn.textContent=label;});
