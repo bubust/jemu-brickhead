@@ -1055,13 +1055,13 @@ function buildFontOpts(containerId,fonts,current,type){
 }
 function saveStyle(){
   currentStyle=Object.assign({},currentStyle,pendingStyle);
-  localStorage.setItem(LS_STYLE,JSON.stringify(currentStyle));
+  lsSet(LS_STYLE,JSON.stringify(currentStyle));
   applyStyle(currentStyle);closeOv('style-modal');
 }
 function resetStyle(){
   if(!confirm('確定恢復所有預設樣式？'))return;
   currentStyle={accent:'#b5925a',bg:'#f4f2ee',dark:'#1a1714',headingFont:HEADING_FONTS[0].family,bodyFont:BODY_FONTS[0].family,scale:'1'};
-  localStorage.removeItem(LS_STYLE);pendingStyle={};
+  lsDel(LS_STYLE);pendingStyle={};
   applyStyle(currentStyle);
   var el=document.getElementById('jemu-theme-css');if(el)el.textContent='';
   closeOv('style-modal');
@@ -1100,14 +1100,16 @@ var D=null,editMode=false,editingId=null,pendImgs={},curFilter='all';
 var lbId=null,lbIdx=0,lbDragIdx=0,lbBatchMode=false;
 
 function loadData(){var r=localStorage.getItem(LS);D=r?JSON.parse(r):JSON.parse(JSON.stringify(DEF_DATA));}
-function saveData(){localStorage.setItem(LS,JSON.stringify(D));}
+function saveData(){lsSet(LS,JSON.stringify(D));}
 
 document.addEventListener('DOMContentLoaded',function(){
   window.scrollTo(0,0);
-  loadStyleData();applyStyle(currentStyle);
-  loadData();renderAll();initFade();initNav();initTabs();
-  loadSocial();
-  renderTabButtons();
+  syncFromOnline().then(function(){
+    loadStyleData();applyStyle(currentStyle);
+    loadData();renderAll();initFade();initNav();initTabs();
+    loadSocial();
+    renderTabButtons();
+  });
 });
 
 function renderAll(){renderHero();renderStats();renderDesignHead();renderCases();renderAbout();renderSteps();renderContact();renderFooter();}
@@ -1430,7 +1432,8 @@ function lbDelBatch(){
   idxToDelete.sort(function(a,b){return b-a;});
   idxToDelete.forEach(function(idx){c.imgs.splice(idx,1);});
   lbIdx=0;lbBatchMode=false;
-  saveData();renderLb();renderCases();
+  try{saveData();}catch(e){}
+  renderLb();renderCases();
 }
 function lbDelCurrent(){lbDelAt(lbIdx);}
 function lbDelAt(idx){
@@ -1439,7 +1442,8 @@ function lbDelAt(idx){
   if(!confirm('確定刪除這張照片？'))return;
   c.imgs.splice(idx,1);
   lbIdx=Math.min(lbIdx,Math.max(0,c.imgs.length-1));
-  saveData();renderLb();renderCases();
+  try{saveData();}catch(e){}
+  renderLb();renderCases();
 }
 function lbPaste(e){
   var items=Array.from((e.clipboardData||{}).items||[]);
@@ -1536,7 +1540,7 @@ function openPw(){
 function chkPw(){
   if(document.getElementById('pwi').value===PASS){
     closeOv('pw-modal');editMode=true;document.body.classList.add('edit-mode');
-    document.getElementById('deploy-bar').style.display='block';
+    document.getElementById('deploy-bar').style.display='block';updatePubStatus();
     var sb=document.getElementById('settings-btn');sb.style.background='#b5925a';sb.style.color='#fff';
   } else {
     document.getElementById('pwerr').textContent='密碼錯誤，請再試一次。';document.getElementById('pwi').value='';
@@ -1594,7 +1598,7 @@ function saveSocial(){
     fb:document.getElementById('sm-fb').value.trim(),
     wa:document.getElementById('sm-wa').value.trim()
   };
-  localStorage.setItem(LS_SOCIAL,JSON.stringify(s));
+  lsSet(LS_SOCIAL,JSON.stringify(s));
   loadSocial();
   closeOv('social-modal');
 }
@@ -1670,7 +1674,7 @@ function openTabMod(){
       var cur=collectTabInputs();
       if(cur.length>=5){alert('最多5個分類');return;}
       cur.push('新分類');
-      localStorage.setItem(LS_TABS,JSON.stringify(cur));
+      lsSet(LS_TABS,JSON.stringify(cur));
       openTabMod();
     };
     list.appendChild(addBtn);
@@ -1681,7 +1685,7 @@ function removeTabRow(i){
   var cur=collectTabInputs();
   if(cur.length<=1){alert('至少保留一個分類');return;}
   cur.splice(i,1);
-  localStorage.setItem(LS_TABS,JSON.stringify(cur));
+  lsSet(LS_TABS,JSON.stringify(cur));
   openTabMod();
 }
 function collectTabInputs(){
@@ -1696,7 +1700,7 @@ function collectTabInputs(){
 function saveTabCats(){
   var cats=collectTabInputs();
   if(!cats.length){alert('請至少填寫一個分類');return;}
-  localStorage.setItem(LS_TABS,JSON.stringify(cats));
+  lsSet(LS_TABS,JSON.stringify(cats));
   renderTabButtons();
   closeOv('tab-modal');
 }
@@ -1809,7 +1813,13 @@ function setText(id,val){var el=document.getElementById(id);if(el)el.textContent
 <!-- DEPLOY HELPER -->
 <div id="deploy-bar" style="display:none;position:fixed;bottom:80px;left:0;right:0;z-index:500;text-align:center;pointer-events:none;">
   <div style="display:inline-flex;align-items:center;gap:12px;background:#1a1714;border:1px solid rgba(181,146,90,.4);padding:12px 24px;pointer-events:all;box-shadow:0 4px 20px rgba(0,0,0,.4);">
-    <span style="font-size:.72rem;letter-spacing:.15em;color:rgba(242,237,228,.6);">資料管理</span>
+    <span id="pub-status" style="font-size:.72rem;letter-spacing:.15em;color:rgba(242,237,228,.6);">資料管理</span>
+    <button id="pub-btn" onclick="publishOnline()" style="background:#c0392b;color:#fff;border:none;padding:8px 20px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+      ☁️ 發布到線上
+    </button>
+    <button onclick="discardDraft()" style="background:transparent;color:rgba(242,237,228,.7);border:1px solid rgba(242,237,228,.3);padding:8px 14px;font-size:.72rem;letter-spacing:.15em;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+      ↺ 還原線上版
+    </button>
     <button onclick="exportData()" style="background:#b5925a;color:#fff;border:none;padding:8px 20px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
       📤 匯出備份
     </button>
@@ -1852,6 +1862,136 @@ function setText(id,val){var el=document.getElementById(id);if(el)el.textContent
 </section>
 
 <script>
+/* ── ONLINE SYNC：內容存在 repo 的 data/site.json，圖片存在 img/ ── */
+var GH_REPO='bubust/jemu-brickhead',GH_BRANCH='main';
+var SYNC_KEYS=['jemu_all_v3','jemu_style_v1','jemu_social_v1','jemu_tabs_v1','jemu_hero_v2'];
+var LS_DIRTY='jemu_dirty',LS_PUB_TS='jemu_pub_ts',LS_GH_TOKEN='jemu_gh_token';
+
+// 編輯模式寫入都經過這裡，標記為「未發布草稿」
+function lsSet(k,v){localStorage.setItem(k,v);localStorage.setItem(LS_DIRTY,'1');}
+function lsDel(k){localStorage.removeItem(k);localStorage.setItem(LS_DIRTY,'1');}
+function hasDraft(){
+  if(localStorage.getItem(LS_DIRTY)==='1')return true;
+  // 舊版只存在瀏覽器、從未發布過的內容，也視為草稿，避免被線上版覆蓋
+  return !localStorage.getItem(LS_PUB_TS)&&SYNC_KEYS.some(function(k){return localStorage.getItem(k)!==null;});
+}
+
+function syncFromOnline(){
+  var timeout=new Promise(function(res){setTimeout(res,4000);});
+  var load=fetch('data/site.json?t='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(site){
+      if(!site||!site.keys||hasDraft())return;
+      // 剛發布完、GitHub Pages 還沒更新時，不要拿舊版蓋掉
+      if((site.updated||0)<(+localStorage.getItem(LS_PUB_TS)||0))return;
+      SYNC_KEYS.forEach(function(k){
+        if(site.keys[k]!=null)localStorage.setItem(k,site.keys[k]);else localStorage.removeItem(k);
+      });
+      localStorage.setItem(LS_PUB_TS,String(site.updated||0));
+    })
+    .catch(function(){});
+  return Promise.race([load,timeout]);
+}
+
+function updatePubStatus(){
+  var el=document.getElementById('pub-status');if(!el)return;
+  el.textContent=hasDraft()?'● 有未發布的修改':'✓ 已與線上版同步';
+  el.style.color=hasDraft()?'#f0b27a':'rgba(242,237,228,.6)';
+}
+setInterval(function(){if(editMode)updatePubStatus();},1500);
+
+function ghToken(){
+  var t=localStorage.getItem(LS_GH_TOKEN);
+  if(!t){
+    t=(prompt('第一次在這台電腦發布，請貼上 GitHub 金鑰（只會存在這台電腦的瀏覽器）：')||'').trim();
+    if(t)localStorage.setItem(LS_GH_TOKEN,t);
+  }
+  return t;
+}
+function ghApi(path,opt){
+  opt=opt||{};
+  opt.headers={'Authorization':'Bearer '+ghToken(),'Accept':'application/vnd.github+json'};
+  return fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+path,opt);
+}
+function b64utf8(s){return btoa(unescape(encodeURIComponent(s)));}
+function sha1hex(s){
+  return crypto.subtle.digest('SHA-1',new TextEncoder().encode(s)).then(function(buf){
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  });
+}
+
+// 把資料裡的 base64 圖片上傳成 img/ 檔案，並換成檔案路徑
+function uploadImages(obj,progress){
+  var jobs=[];
+  (function walk(o){
+    Object.keys(o).forEach(function(k){
+      var v=o[k];
+      if(typeof v==='string'&&v.indexOf('data:image/')===0)jobs.push({o:o,k:k,v:v});
+      else if(v&&typeof v==='object')walk(v);
+    });
+  })(obj);
+  return jobs.reduce(function(p,j,i){
+    return p.then(function(){
+      progress(i+1,jobs.length);
+      var m=j.v.match(/^data:image\/(\w+);base64,(.*)$/);if(!m)return;
+      var ext=m[1]==='jpeg'?'jpg':m[1];
+      return sha1hex(m[2]).then(function(h){
+        var path='img/'+h.slice(0,16)+'.'+ext;
+        return ghApi(path,{method:'PUT',body:JSON.stringify({message:'上傳圖片 '+path,content:m[2],branch:GH_BRANCH})})
+          .then(function(r){
+            // 422 = 同內容的檔案已存在，可直接沿用
+            if(!r.ok&&r.status!==422)throw new Error('圖片上傳失敗（'+r.status+'）');
+            j.o[j.k]=path;
+          });
+      });
+    });
+  },Promise.resolve());
+}
+
+function publishOnline(){
+  if(!ghToken())return;
+  var btn=document.getElementById('pub-btn'),label=btn.textContent;
+  btn.disabled=true;
+  var keys={};
+  SYNC_KEYS.forEach(function(k){var v=localStorage.getItem(k);if(v!==null)keys[k]=v;});
+  var parsed={};
+  Object.keys(keys).forEach(function(k){try{parsed[k]=JSON.parse(keys[k]);}catch(e){}});
+  uploadImages(parsed,function(i,n){btn.textContent='上傳圖片 '+i+'/'+n+'…';})
+    .then(function(){
+      Object.keys(parsed).forEach(function(k){keys[k]=JSON.stringify(parsed[k]);});
+      btn.textContent='發布中…';
+      return ghApi('data/site.json?ref='+GH_BRANCH).then(function(r){
+        if(r.status===401){localStorage.removeItem(LS_GH_TOKEN);throw new Error('GitHub 金鑰無效，請重新按發布並貼上正確金鑰');}
+        return r.ok?r.json():{};
+      });
+    })
+    .then(function(cur){
+      var site={updated:Date.now(),keys:keys};
+      var body={message:'網站內容更新',content:b64utf8(JSON.stringify(site)),branch:GH_BRANCH};
+      if(cur.sha)body.sha=cur.sha;
+      return ghApi('data/site.json',{method:'PUT',body:JSON.stringify(body)}).then(function(r){
+        if(!r.ok)throw new Error('發布失敗（'+r.status+'）');
+        // 本機也換成圖片路徑版本，順便釋放 localStorage 空間
+        Object.keys(keys).forEach(function(k){localStorage.setItem(k,keys[k]);});
+        localStorage.setItem(LS_PUB_TS,String(site.updated));
+        localStorage.removeItem(LS_DIRTY);
+        updatePubStatus();
+        alert('✅ 已發布！約 1～2 分鐘後，所有人打開網站都會看到新內容。');
+      });
+    })
+    .catch(function(e){alert('❌ '+e.message);})
+    .then(function(){btn.disabled=false;btn.textContent=label;});
+}
+
+function discardDraft(){
+  if(!confirm('放棄這台電腦上所有未發布的修改，改回線上版？'))return;
+  fetch('data/site.json?t='+Date.now(),{cache:'no-store'}).then(function(r){
+    if(!r.ok){alert('線上還沒有發布過任何內容，請先按「☁️ 發布到線上」。');return;}
+    SYNC_KEYS.concat([LS_DIRTY,LS_PUB_TS]).forEach(function(k){localStorage.removeItem(k);});
+    location.reload();
+  }).catch(function(){alert('連不到線上版，請稍後再試。');});
+}
+
 function downloadAsIndex(){
   var html=document.documentElement.outerHTML;
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
@@ -1879,7 +2019,7 @@ function importDataFile(input){
     try{
       var d=JSON.parse(e.target.result);
       var count=0;
-      Object.keys(d).forEach(function(k){localStorage.setItem(k,d[k]);count++;});
+      Object.keys(d).forEach(function(k){lsSet(k,d[k]);count++;});
       alert('成功匯入 '+count+' 筆資料！即將重新整理…');
       location.reload();
     }catch(err){alert('檔案格式錯誤，請選擇正確的 jemu-backup.json');}
