@@ -1915,7 +1915,7 @@ function setText(id,val){var el=document.getElementById(id);if(el)el.textContent
 /* ── ONLINE SYNC：內容存在 repo 的 data/site.json，圖片存在 img/ ── */
 var GH_REPO='bubust/jemu-brickhead',GH_BRANCH='main';
 var SYNC_KEYS=['jemu_all_v3','jemu_style_v1','jemu_social_v1','jemu_tabs_v1','jemu_hero_v2'];
-var LS_DIRTY='jemu_dirty',LS_PUB_TS='jemu_pub_ts',LS_GH_TOKEN='jemu_gh_token';
+var LS_DIRTY='jemu_dirty',LS_PUB_TS='jemu_pub_ts',LS_GH_TOKEN='jemu_gh_token',LS_BASE='jemu_base';
 
 // 編輯模式寫入都經過這裡，標記為「未發布草稿」
 function lsSet(k,v){localStorage.setItem(k,v);localStorage.setItem(LS_DIRTY,'1');}
@@ -1938,6 +1938,7 @@ function syncFromOnline(){
         if(site.keys[k]!=null)localStorage.setItem(k,site.keys[k]);else localStorage.removeItem(k);
       });
       localStorage.setItem(LS_PUB_TS,String(site.updated||0));
+      localStorage.setItem(LS_BASE,JSON.stringify(site.keys));
     })
     .catch(function(){});
   return Promise.race([load,timeout]);
@@ -1998,7 +1999,30 @@ function uploadImages(obj,progress){
   },Promise.resolve());
 }
 
-function publishOnline(){
+var merged=false;
+// 三方合併：本機沒改過（跟上次同步的版本一樣）的部分，用線上版
+function mergeKeys(local,online){
+  var base={};try{base=JSON.parse(localStorage.getItem(LS_BASE)||'{}');}catch(e){}
+  var out={};
+  SYNC_KEYS.forEach(function(k){
+    var l=local[k],o=online[k],b=base[k];
+    if(k==='jemu_all_v3'&&l&&o&&b){
+      var L=JSON.parse(l),O=JSON.parse(o),B=JSON.parse(b);
+      Object.keys(O).forEach(function(f){
+        if(JSON.stringify(L[f])===JSON.stringify(B[f])&&JSON.stringify(L[f])!==JSON.stringify(O[f])){L[f]=O[f];merged=true;}
+      });
+      out[k]=JSON.stringify(L);
+    } else if(b!==undefined&&l===b&&o!==undefined&&o!==l){
+      out[k]=o;merged=true;
+    } else if(l!==undefined){
+      out[k]=l;
+    } else if(o!==undefined&&b===undefined){
+      out[k]=o;merged=true;
+    }
+  });
+  return out;
+}
+function publishOnline(){merged=false;
   if(!ghToken())return;
   var btn=document.getElementById('pub-btn'),label=btn.textContent;
   btn.disabled=true;
@@ -2012,10 +2036,18 @@ function publishOnline(){
       btn.textContent='發布中…';
       return ghApi('data/site.json?ref='+GH_BRANCH).then(function(r){
         if(r.status===401){localStorage.removeItem(LS_GH_TOKEN);throw new Error('GitHub 金鑰無效，請重新按發布並貼上正確金鑰');}
-        return r.ok?r.json():{};
+        if(!r.ok)return {};
+        return r.json().then(function(f){
+          try{f.site=JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\s/g,'')))));}catch(e){}
+          return f;
+        });
       });
     })
     .then(function(cur){
+      // 線上版在上次同步後被改過（例如 Claude 直接改的），把沒在這台電腦改過的部分保留下來
+      if(cur.site&&cur.site.keys&&(cur.site.updated||0)>(+localStorage.getItem(LS_PUB_TS)||0)){
+        keys=mergeKeys(keys,cur.site.keys);
+      }
       var site={updated:Date.now(),keys:keys};
       var body={message:'網站內容更新',content:b64utf8(JSON.stringify(site)),branch:GH_BRANCH};
       if(cur.sha)body.sha=cur.sha;
@@ -2024,9 +2056,11 @@ function publishOnline(){
         // 本機也換成圖片路徑版本，順便釋放 localStorage 空間
         Object.keys(keys).forEach(function(k){localStorage.setItem(k,keys[k]);});
         localStorage.setItem(LS_PUB_TS,String(site.updated));
+        localStorage.setItem(LS_BASE,JSON.stringify(keys));
         localStorage.removeItem(LS_DIRTY);
         updatePubStatus();
         alert('✅ 已發布！約 1～2 分鐘後，所有人打開網站都會看到新內容。');
+        if(merged){location.reload();}
       });
     })
     .catch(function(e){alert('❌ '+e.message);})
