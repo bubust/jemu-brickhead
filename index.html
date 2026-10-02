@@ -1694,14 +1694,17 @@ function updateTagSelects(cats){
     var other=document.createElement('option');other.value='其他';other.textContent='其他';cfSel.appendChild(other);
   }
 }
-function openTabMod(){
-  var cats=getTabCats();
+function openTabMod(list){
+  var cats=list||getTabCats();
   var list=document.getElementById('tab-edit-list');
   list.innerHTML='';
   cats.forEach(function(c,i){
     var row=document.createElement('div');
     row.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+    var arrow='width:30px;height:30px;border-radius:50%;background:#fff;color:#b5925a;border:1px solid rgba(181,146,90,.45);cursor:pointer;flex-shrink:0;';
     row.innerHTML='<input class="mi" id="tcat-'+i+'" value="'+c+'" placeholder="分類名稱" style="flex:1;">'
+      +'<button title="往上移" onclick="moveTabRow('+i+',-1)" style="'+arrow+(i===0?'visibility:hidden;':'')+'">▲</button>'
+      +'<button title="往下移" onclick="moveTabRow('+i+',1)" style="'+arrow+(i===cats.length-1?'visibility:hidden;':'')+'">▼</button>'
       +'<button onclick="removeTabRow('+i+')" style="width:30px;height:30px;border-radius:50%;background:#c0392b;color:#fff;border:none;cursor:pointer;flex-shrink:0;">✕</button>';
     list.appendChild(row);
   });
@@ -1726,6 +1729,14 @@ function removeTabRow(i){
   cur.splice(i,1);
   lsSet(LS_TABS,JSON.stringify(cur));
   openTabMod();
+}
+// 只調整視窗內順序，按「儲存」才生效
+function moveTabRow(i,dir){
+  var cur=[],k=0;
+  while(document.getElementById('tcat-'+k)){cur.push(document.getElementById('tcat-'+k).value);k++;}
+  var j=i+dir;if(j<0||j>=cur.length)return;
+  var t=cur[i];cur[i]=cur[j];cur[j]=t;
+  openTabMod(cur);
 }
 function collectTabInputs(){
   var result=[];
