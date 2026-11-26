@@ -80,6 +80,11 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
 #lb-name{font-family:'Noto Serif TC',serif;font-size:1.15rem;color:#f2ede4;letter-spacing:.08em;}
 #lb-area{font-size:.72rem;color:rgba(255,255,255,.35);margin-top:3px;}
 #lb-counter{font-family:'Cormorant Garamond',serif;font-size:.88rem;color:rgba(255,255,255,.28);flex-shrink:0;padding-top:2px;}
+/* 施工階段標籤（施工前／施工中／完工），資料來自案例的 caps：{照片路徑: 階段} */
+.lb-phase{position:absolute;top:14px;left:14px;z-index:3;padding:5px 12px;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.12em;color:#fff;display:none;box-shadow:0 2px 8px rgba(0,0,0,.35);}
+.lb-phase.on{display:block;}
+.ph-before{background:#8a6d4b;}.ph-during{background:#d4891a;}.ph-after{background:#2f8f5b;}
+.lb-thumb-ph{position:absolute;left:3px;bottom:3px;z-index:2;font-size:.55rem;line-height:1;padding:3px 5px;border-radius:6px;color:#fff;pointer-events:none;}
 #lb-desc{font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.8;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);white-space:pre-wrap;display:none;}
 #lb-desc.has-text{display:block;}
 #lb-thumbs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:10px 12px;overflow-y:auto;flex:1;background:#111;align-content:start;scrollbar-width:thin;}
@@ -528,6 +533,7 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
     <div id="lb-left">
       <div id="lb-main-wrap">
         <img id="lb-main-img" src="" alt="" style="display:none">
+        <div id="lb-phase" class="lb-phase"></div>
         <div id="lb-main-empty"><span>🧱</span><p>尚未上傳照片</p></div>
         <button class="lb-arrow" id="lb-prev" onclick="lbNav(-1)">&#8249;</button>
         <button class="lb-arrow" id="lb-next" onclick="lbNav(1)">&#8250;</button>
@@ -1321,6 +1327,8 @@ function delCase(id,e){
 }
 
 /* LIGHTBOX */
+var PHASE_CLS={'施工前':'ph-before','施工中':'ph-during','完工':'ph-after'};
+function phaseOf(c,src){var l=c&&c.caps&&c.caps[src];return l&&PHASE_CLS[l]?{label:l,cls:PHASE_CLS[l]}:null;}
 function openLb(id){
   lbId=id;lbIdx=0;lbBatchMode=false;
   var c=D.cases.find(function(x){return x.id===id;});if(!c)return;
@@ -1355,6 +1363,8 @@ function renderLb(){
   var mi=document.getElementById('lb-main-img'),me=document.getElementById('lb-main-empty');
   if(imgs.length){mi.src=imgs[lbIdx];mi.style.display='block';me.style.display='none';}
   else{mi.style.display='none';me.style.display='flex';}
+  var phEl=document.getElementById('lb-phase'),ph=imgs.length?phaseOf(c,imgs[lbIdx]):null;
+  phEl.className='lb-phase'+(ph?' on '+ph.cls:'');phEl.textContent=ph?ph.label:'';
   var tb=document.getElementById('lb-thumbs');tb.innerHTML='';
   imgs.forEach(function(src,i){
     var wrap=document.createElement('div');
@@ -1406,7 +1416,10 @@ function renderLb(){
     var cb=document.createElement('input');
     cb.type='checkbox';cb.className='lb-thumb-cb';
     cb.onclick=(function(w,ck){return function(e){e.stopPropagation();w.classList.toggle('lb-selected',ck.checked);lbUpdateBatchCount();};})(wrap,cb);
-    wrap.appendChild(img);wrap.appendChild(del);wrap.appendChild(cb);tb.appendChild(wrap);
+    wrap.appendChild(img);wrap.appendChild(del);wrap.appendChild(cb);
+    var tph=phaseOf(c,src);
+    if(tph){var b=document.createElement('span');b.className='lb-thumb-ph '+tph.cls;b.textContent=tph.label;wrap.appendChild(b);}
+    tb.appendChild(wrap);
   });
   // hint text in edit mode
   if(editMode&&imgs.length>1){
