@@ -1337,14 +1337,15 @@ function delCase(id,e){
 
 /* LIGHTBOX */
 var PHASE_CLS={'施工前':'ph-before','施工中':'ph-during','完工':'ph-after'};
-function phaseOf(c,src){var l=c&&c.caps&&c.caps[src];return l&&PHASE_CLS[l]?{label:l,cls:PHASE_CLS[l]}:null;}
+var STAGE_ORDER=['施工前','拆除','結構增建','砌磚','水電配管','防水','泥作貼磚','木作天花','油漆','設備安裝','施工中','完工','完工外觀'];
+function phaseOf(c,src){var l=c&&c.caps&&c.caps[src];if(!l)return null;return {label:l,cls:PHASE_CLS[l]||(l.indexOf('完工')===0?'ph-after':'ph-during')};}
 function thumbOf(src){return /^img\/p\//.test(src)?src.replace(/^img\/p\//,'img/t/'):src;}
 var lbPhase='';
 function renderLbPhases(c,imgs){
   var box=document.getElementById('lb-phases');if(!box)return;box.innerHTML='';
   var cnt={};imgs.forEach(function(s){var p=phaseOf(c,s);if(p)cnt[p.label]=(cnt[p.label]||0)+1;});
   if(editMode||Object.keys(cnt).length<2)return;
-  [['','全部 '+imgs.length]].concat(['施工前','施工中','完工'].filter(function(k){return cnt[k];}).map(function(k){return [k,k+' '+cnt[k]];})).forEach(function(o){
+  [['','全部 '+imgs.length]].concat(STAGE_ORDER.filter(function(k){return cnt[k];}).map(function(k){return [k,k+' '+cnt[k]];})).forEach(function(o){
     var b=document.createElement('button');b.className='lb-ph-btn'+(lbPhase===o[0]?' on':'');b.textContent=o[1];
     b.onclick=function(){lbPhase=o[0];if(o[0]){var j=imgs.findIndex(function(s){var p=phaseOf(c,s);return p&&p.label===o[0];});if(j>=0)lbIdx=j;}renderLb();};
     box.appendChild(b);
