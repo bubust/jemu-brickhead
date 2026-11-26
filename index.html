@@ -87,7 +87,11 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
 .lb-thumb-ph{position:absolute;left:3px;bottom:3px;z-index:2;font-size:.55rem;line-height:1;padding:3px 5px;border-radius:6px;color:#fff;pointer-events:none;}
 #lb-desc{font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.8;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);white-space:pre-wrap;display:none;}
 #lb-desc.has-text{display:block;}
-#lb-thumbs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:10px 12px;overflow-y:auto;flex:1;background:#111;align-content:start;scrollbar-width:thin;}
+.lb-phases{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px 0;background:#111;flex-shrink:0;}
+.lb-phases:empty{display:none;}
+.lb-ph-btn{padding:5px 12px;border-radius:999px;font-size:.74rem;letter-spacing:.08em;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.18);background:transparent;cursor:pointer;}
+.lb-ph-btn.on{background:#b5925a;border-color:#b5925a;color:#fff;}
+#lb-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 12px;overflow-y:auto;flex:1;background:#111;align-content:start;scrollbar-width:thin;}
 #lb-thumbs::-webkit-scrollbar{width:3px;}
 #lb-thumbs::-webkit-scrollbar-thumb{background:#b5925a;}
 .lb-thumb{width:100%;aspect-ratio:4/3;object-fit:contain;background:#0a0a0a;cursor:pointer;border:2px solid transparent;transition:.15s;opacity:.75;display:block;}
@@ -216,8 +220,12 @@ section{padding:72px 5% 80px;}
 .tab-btn.on{color:#1a1714;border-color:rgba(181,146,90,.45);background:rgba(181,146,90,.06);}
 
 /* PORTFOLIO GRID */
-#portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.card-wrap{break-inside:avoid;margin-bottom:4px;}
+#portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:34px 26px;max-width:1280px;margin:0 auto;}
+.card-cap{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 2px 0;}
+.cc-tag{font-size:.7rem;letter-spacing:.2em;color:#b5925a;}
+.cc-meta{font-size:.74rem;letter-spacing:.06em;color:#8a7d70;white-space:nowrap;}
+.case-card{box-shadow:0 6px 18px rgba(26,23,20,.10);}
+.card-wrap{break-inside:avoid;}
 .case-card{position:relative;overflow:hidden;background:#2a2420;cursor:pointer;aspect-ratio:4/3;}
 .case-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .65s cubic-bezier(.25,.46,.45,.94),filter .4s;filter:brightness(.9);}
 .case-card:hover img{transform:scale(1.05);filter:brightness(.68);}
@@ -354,8 +362,8 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
 .fade.in{opacity:1;transform:none;}
 
 /* RESPONSIVE */
-@media(max-width:960px){#portfolio-grid{grid-template-columns:repeat(2,1fr);}.about-grid{grid-template-columns:1fr;gap:44px;}.contact-grid{grid-template-columns:1fr;gap:44px;}#stats-bar{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:680px){#nav{display:none;}.mob-nav-bar{display:flex;}#portfolio-grid{grid-template-columns:repeat(1,1fr);}.cf-row{grid-template-columns:1fr;}.about-frame{display:none;}.m-row{grid-template-columns:1fr;}}
+@media(max-width:960px){#portfolio-grid{grid-template-columns:repeat(2,1fr);gap:26px 18px;}.about-grid{grid-template-columns:1fr;gap:44px;}.contact-grid{grid-template-columns:1fr;gap:44px;}#stats-bar{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:680px){#nav{display:none;}.mob-nav-bar{display:flex;}#portfolio-grid{grid-template-columns:repeat(1,1fr);gap:26px;}.cf-row{grid-template-columns:1fr;}.about-frame{display:none;}.m-row{grid-template-columns:1fr;}}
 @media(min-width:681px){.mob-nav-bar{display:none!important;}}
 /* MOBILE — tighter spacing, chip tabs, compact floating buttons */
 @media(max-width:680px){
@@ -547,6 +555,7 @@ footer{background:#1a1714;padding:44px 5% 26px;text-align:center;position:relati
       </div>
       <div id="lb-desc"></div>
     </div>
+    <div id="lb-phases" class="lb-phases"></div>
     <div id="lb-thumbs"></div>
     <div id="lb-edit-panel">
       <div class="lb-ep-desc-wrap">
@@ -1245,9 +1254,9 @@ function renderCases(){
     if(!c.imgs)c.imgs=[];
     var thumb=c.img||c.imgs[0]||'';
     var w=document.createElement('div');
-    w.className='card-wrap';w.dataset.tag=c.tag;
+    w.className='card-wrap';w.dataset.tag=c.tag;w.dataset.sub=c.sub?'1':'';
     var photoCount=c.imgs.length>1?' &nbsp;·&nbsp; '+c.imgs.length+'張照片':'';
-    w.innerHTML='<div class="case-card" onclick="openLb(\''+c.id+'\')">'+(thumb?'<img src="'+thumb+'" alt="'+c.name+'" loading="lazy">':'<div class="card-empty">🧱</div>')+'<div class="hover-layer"><div class="h-tag">'+c.tag+'</div><div class="h-name">'+c.name+'</div><div class="h-area">📍 '+c.area+photoCount+'</div></div><div class="card-wm">積木磚頭</div><div class="card-edit-row"><button class="card-btn e" onclick="openEditMod(\''+c.id+'\',event)">✏️</button><button class="card-btn d" onclick="delCase(\''+c.id+'\',event)">🗑</button></div></div>';
+    w.innerHTML='<div class="case-card" onclick="openLb(\''+c.id+'\')">'+(thumb?'<img src="'+thumb+'" alt="'+c.name+'" loading="lazy">':'<div class="card-empty">🧱</div>')+'<div class="hover-layer"><div class="h-name">'+c.name+'</div><div class="h-area">點開看 '+c.imgs.length+' 張施工照片 →</div></div><div class="card-edit-row"><button class="card-btn e" onclick="openEditMod(\''+c.id+'\',event)">✏️</button><button class="card-btn d" onclick="delCase(\''+c.id+'\',event)">🗑</button></div></div><div class="card-cap"><span class="cc-tag">'+c.tag+'</span><span class="cc-meta">'+(c.area?'📍 '+c.area+' · ':'')+c.imgs.length+' 張</span></div>';
     g.insertBefore(w,addW);
   });
   applyFilter();
@@ -1329,8 +1338,20 @@ function delCase(id,e){
 /* LIGHTBOX */
 var PHASE_CLS={'施工前':'ph-before','施工中':'ph-during','完工':'ph-after'};
 function phaseOf(c,src){var l=c&&c.caps&&c.caps[src];return l&&PHASE_CLS[l]?{label:l,cls:PHASE_CLS[l]}:null;}
+function thumbOf(src){return /^img\/p\//.test(src)?src.replace(/^img\/p\//,'img/t/'):src;}
+var lbPhase='';
+function renderLbPhases(c,imgs){
+  var box=document.getElementById('lb-phases');if(!box)return;box.innerHTML='';
+  var cnt={};imgs.forEach(function(s){var p=phaseOf(c,s);if(p)cnt[p.label]=(cnt[p.label]||0)+1;});
+  if(editMode||Object.keys(cnt).length<2)return;
+  [['','全部 '+imgs.length]].concat(['施工前','施工中','完工'].filter(function(k){return cnt[k];}).map(function(k){return [k,k+' '+cnt[k]];})).forEach(function(o){
+    var b=document.createElement('button');b.className='lb-ph-btn'+(lbPhase===o[0]?' on':'');b.textContent=o[1];
+    b.onclick=function(){lbPhase=o[0];if(o[0]){var j=imgs.findIndex(function(s){var p=phaseOf(c,s);return p&&p.label===o[0];});if(j>=0)lbIdx=j;}renderLb();};
+    box.appendChild(b);
+  });
+}
 function openLb(id){
-  lbId=id;lbIdx=0;lbBatchMode=false;
+  lbId=id;lbIdx=0;lbBatchMode=false;lbPhase='';
   var c=D.cases.find(function(x){return x.id===id;});if(!c)return;
   if(!c.imgs)c.imgs=[];
   renderLb();
@@ -1366,7 +1387,10 @@ function renderLb(){
   var phEl=document.getElementById('lb-phase'),ph=imgs.length?phaseOf(c,imgs[lbIdx]):null;
   phEl.className='lb-phase'+(ph?' on '+ph.cls:'');phEl.textContent=ph?ph.label:'';
   var tb=document.getElementById('lb-thumbs');tb.innerHTML='';
+  renderLbPhases(c,imgs);
+  if(imgs[lbIdx+1]){var pre=new Image();pre.src=imgs[lbIdx+1];}
   imgs.forEach(function(src,i){
+    if(lbPhase&&!editMode){var pp=phaseOf(c,src);if(!pp||pp.label!==lbPhase)return;}
     var wrap=document.createElement('div');
     wrap.className='lb-thumb-wrap';
     wrap.dataset.idx=i;
@@ -1409,7 +1433,7 @@ function renderLb(){
     }
     var img=document.createElement('img');
     img.className='lb-thumb'+(i===lbIdx?' active':'');
-    img.src=src;img.draggable=false;
+    img.src=thumbOf(src);img.loading='lazy';img.draggable=false;
     var del=document.createElement('button');
     del.className='lb-thumb-del';del.textContent='✕';del.title='刪除此張';
     del.onclick=(function(idx){return function(e){e.stopPropagation();lbDelAt(idx);};})(i);
@@ -1477,7 +1501,9 @@ function lbSetCoverUrl(){
 function lbNav(dir){
   var c=D.cases.find(function(x){return x.id===lbId;});
   if(!c||!c.imgs||!c.imgs.length)return;
-  lbIdx=(lbIdx+dir+c.imgs.length)%c.imgs.length;renderLb();
+  var n=c.imgs.length,j=lbIdx;
+  for(var k=0;k<n;k++){j=(j+dir+n)%n;if(!lbPhase||editMode){break;}var pp=phaseOf(c,c.imgs[j]);if(pp&&pp.label===lbPhase)break;}
+  lbIdx=j;renderLb();
 }
 function lbAddImg(src){
   if(!src)return;
@@ -1877,7 +1903,7 @@ function initTabs(){
 }
 function applyFilter(){
   document.querySelectorAll('#portfolio-grid .card-wrap[data-tag]').forEach(function(w){
-    w.style.display=(curFilter==='all'||w.dataset.tag===curFilter)?'':'none';
+    w.style.display=(curFilter==='all'?!w.dataset.sub:w.dataset.tag===curFilter)?'':'none';
   });
 }
 
